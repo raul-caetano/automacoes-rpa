@@ -5,7 +5,15 @@
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Selenium](https://img.shields.io/badge/Selenium-43B02A?style=flat-square&logo=selenium&logoColor=white)
 
-> ⚠️ Repositório de **portfólio**: descreve arquitetura e boas práticas. Não contém código proprietário nem credenciais.
+> ⚠️ Repositório de **estudo de caso**: descreve arquitetura e boas práticas — sem código proprietário nem credenciais.
+>
+> ▶️ **Quer ver um robô rodando?** Fiz um de código aberto com as mesmas práticas: **[rpa-coletor](https://github.com/raul-caetano/rpa-coletor)** (Selenium + testes).
+
+## ▶️ Um robô do mesmo tipo, rodando
+
+_(execução do meu robô de demonstração — [rpa-coletor](https://github.com/raul-caetano/rpa-coletor))_
+
+![Execução do robô](https://raw.githubusercontent.com/raul-caetano/rpa-coletor/main/docs/execucao.png)
 
 ## O problema
 
@@ -13,27 +21,33 @@ Times de operação e gestão dependiam de **coletas manuais** repetitivas (baix
 
 ## O que eu construí
 
-**10+ automações** em produção, entre elas:
+**10+ automações** em produção: volumetria de Zendesk, extração de chargeback, cargas via SFTP, replicações e painéis alimentados automaticamente — agendados, gravando direto no _share_ de rede que alimenta os painéis.
 
-- **Volumetria de Zendesk** — _scraping_ do dashboard, consolidação e exportação da tabela, gravando direto no _share_ de rede que alimenta os painéis.
-- **Extração de chargeback** — coleta agendada de dados de disputa.
-- **Cargas via SFTP** e replicações entre bases.
-- **Painéis alimentados automaticamente** para acompanhamento em telas de gestão.
+## 🔧 Prática em destaque (reescrita de forma ilustrativa)
 
-## Boas práticas aplicadas
+**Resiliência é o que faz um robô sobreviver em produção.** Cada passo tenta de novo com _backoff_ e, na falha, salva um _screenshot_ da tela para diagnóstico:
 
-- **ChromeDriver automático** via `webdriver-manager` / Selenium Manager (sem caminho fixo, sem quebrar em atualização do Chrome).
-- **Resiliência** — _retry_, janela fixa, logs de erro com _traceback_ e _screenshot_ do momento da falha.
-- **Agendamento** (execuções de madrugada, com filtro de data D-1 corrigido para fuso).
-- **Segredos protegidos** — credenciais fora do versionamento (`.gitignore`), com guia de _setup_.
-- **Empacotamento em executável** para implantação simples nas máquinas de operação.
+```python
+def coletar_com_retry(driver, url, logger, tentativas, dir_saida):
+    for tentativa in range(1, tentativas + 1):
+        try:
+            return coletar_pagina(driver, url, logger)
+        except Exception as e:
+            logger.warning("  falha na tentativa %d/%d: %s", tentativa, tentativas, e)
+            _screenshot_erro(driver, dir_saida, logger)   # print no momento do erro
+            if tentativa == tentativas:
+                raise
+            time.sleep(2 * tentativa)                      # backoff crescente
+```
+
+Somado a: **ChromeDriver automático** (não quebra quando o Chrome atualiza), **log estruturado**, **CSV pt-BR** (`;` + BOM), **nome de arquivo D-1** para execuções de madrugada e **segredos por ambiente** (`.env`, nunca no código).
 
 ## Stack
 
 | Item | Tecnologia |
 |---|---|
 | Linguagem | Python |
-| Automação | Selenium · webdriver-manager |
+| Automação | Selenium · Selenium Manager |
 | Entrega | Executável empacotado · agendador · _share_ de rede (UNC) |
 
 ## Impacto
